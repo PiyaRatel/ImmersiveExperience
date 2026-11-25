@@ -1,0 +1,1384 @@
+<title>Palace Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Type: Caveat, a handwritten pen face (400-700), for both display and body. Caveat has no italic or light
+     weight, so in-world lines use upright 400. The game name (h1) keeps its original Josefin Sans. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Josefin+Sans:wght@700&display=swap">
+<style>
+/* Layout: one full-bleed 3D corridor that never stops running; screens are overlays on top of it. */
+:root{
+  --night:#2b1522;      /* dusk plum: page ground */
+  --soot:rgba(43,21,34,.74);
+  --gold:#f0b54a;       /* trims, active keyword */
+  --crystal:#78f2ff;    /* collectables */
+  --ember:#ff7a33;      /* torches, call to action */
+  --ink:#f7ecd6;        /* text */
+  --muted:#c4ab88;
+  --danger:#ff4d3d;
+  --display:'Caveat','Bradley Hand','Segoe Print',cursive;
+  --body:'Caveat','Bradley Hand','Segoe Print',cursive;
+  --title:'Josefin Sans','Futura','Century Gothic',sans-serif; /* game name keeps its original painted capitals */
+  --ink-dark:#2b1522;   /* text on cream brush buttons */
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--night);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;border-radius:10px}
+button::before,button::after{border-radius:10px}
+button:focus-visible{outline:3px solid var(--crystal);outline-offset:4px}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,2.4vh,28px);text-align:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));z-index:5}
+
+/* ---------- Page 1: title ---------- */
+#intro{background:linear-gradient(180deg,rgba(43,21,34,.55) 0%,rgba(43,21,34,.05) 45%,rgba(20,34,36,.55) 100%)}
+.eyebrow{font-family:var(--body);font-weight:600;font-size:clamp(11px,1.3vw,14px);letter-spacing:.3em;color:#ffe2bd;text-shadow:0 1px 8px rgba(43,21,34,.8);text-transform:uppercase}
+/* title: plain cream painted capitals, edges roughened by the #rough SVG filter (like a dry brush on paper) */
+h1{font-family:var(--title);font-weight:700;margin:0;line-height:.9;font-size:clamp(50px,10.5vw,156px);letter-spacing:.05em;text-transform:uppercase;text-wrap:balance;
+  color:#fff6e8;filter:url(#rough) drop-shadow(0 6px 22px rgba(43,21,34,.55))}
+h1 span{display:block;font-size:.52em;letter-spacing:.24em;padding-left:.24em}
+/* in-world lines: regular weight, white with a dark halo (Wayfinder's floating-text treatment) */
+.tagline{font-weight:400;font-size:clamp(17px,2vw,24px);letter-spacing:.02em;max-width:32ch;color:#fff;text-wrap:balance;margin:0;text-shadow:0 0 10px rgba(0,0,0,.85),0 0 4px rgba(43,21,34,.6)}
+/* Brush buttons. The fills are dry-brush strokes painted onto a canvas at load (see brushes() in the script) and
+   set as --brush-* images; the flat colours are the fallback. Like Wayfinder's start button, a cream stroke sits
+   on a dark L-shaped "shadow" stroke and lifts off it on hover. */
+.cta,.ghost,#snd{position:relative;isolation:isolate;border:0;background:none;font-family:var(--body);-webkit-tap-highlight-color:transparent}
+.cta::before,.cta::after,.ghost::before,#snd::before{content:"";position:absolute;inset:0;z-index:-1;background-position:center;background-size:100% 100%;background-repeat:no-repeat;transition:transform .15s ease-out}
+.cta{font-weight:700;font-size:clamp(17px,2vw,24px);letter-spacing:.01em;padding:.95em 2.1em;color:var(--ink-dark)}
+.cta::before{background-image:var(--brush-cream,none);background-color:var(--brush-cream-fb,#f7ecd6)}
+.cta::after{z-index:-2;transform:translate(7px,6px);background-image:var(--brush-shadow,none)}
+.cta:hover::before,.cta:hover .lbl{transform:translate(-4px,-3px)}
+.cta:active::before,.cta:active .lbl{transform:translate(2px,2px)}
+.cta .lbl{position:relative;display:inline-block;transition:transform .15s ease-out}
+/* auto-start progress: an ink line drawn under the label */
+.cta .fill{position:absolute;left:14%;bottom:11%;height:3px;width:calc(var(--p,0)*72%);background:var(--ink-dark);border-radius:2px;opacity:.55;pointer-events:none}
+.fine{font-size:13px;color:var(--muted);max-width:52ch;margin:0;text-shadow:0 1px 6px #000}
+kbd{font-family:var(--body);font-size:12px;border:1px solid var(--muted);border-radius:4px;padding:0 5px}
+
+/* ---------- Page 2: the wall briefing ---------- */
+#onboard{background:var(--soot);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);gap:clamp(10px,2vh,22px)}
+.tutwrap{position:relative;width:min(94vw,1180px,calc(62vh * 16 / 9));aspect-ratio:16/9;max-width:100%;border-radius:10px;overflow:hidden;
+  box-shadow:0 0 0 2px rgba(240,181,74,.35),0 30px 80px rgba(0,0,0,.6)}
+#tut{width:100%;height:100%;display:block}
+.keywords{display:flex;gap:clamp(18px,4vw,64px);justify-content:center;flex-wrap:wrap}
+.kw{font-family:var(--display);font-size:clamp(24px,4.4vw,64px);line-height:1;color:rgba(247,236,214,.28);transition:color .2s,transform .2s,text-shadow .2s;display:flex;align-items:center;gap:.3em}
+.kw.on{color:var(--gold);transform:scale(1.06);text-shadow:0 0 28px rgba(240,181,74,.55)}
+.kw[data-k="grab"].on{color:var(--crystal);text-shadow:0 0 28px rgba(120,242,255,.55)}
+.kw i{width:.5em;height:.5em;border-radius:50%;background:currentColor;display:inline-block;box-shadow:0 0 0 .08em rgba(0,0,0,.4) inset}
+.kw[data-k="grab"] i{border-radius:2px;transform:rotate(45deg) scale(.85)}
+.kw[data-k="dodge"] i{border-radius:2px;width:.18em;height:.6em}
+.row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center}
+.ghost{padding:.8em 1.5em;font-size:14px;font-weight:600;color:var(--ink)}
+.ghost::before{background-image:var(--brush-ink,none);background-color:var(--brush-ink-fb,rgba(43,21,34,.8))}
+.ghost:hover::before{transform:translate(-2px,-2px) scale(1.03)}
+.ghost:hover{color:#fff}
+
+/* compare panel */
+#compare{z-index:9;background:rgba(10,6,3,.9)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px;width:min(1100px,100%);text-align:left;max-height:100%;overflow:auto}
+.cmp figure{margin:0;display:flex;flex-direction:column;gap:12px;min-width:0}
+.cmp figcaption{font-size:14px;color:var(--muted)}
+.cmp figcaption b{color:var(--ink);font-family:var(--display);font-weight:400;font-size:18px;display:block;letter-spacing:.04em}
+.old{background:#e9e4da;color:#2b2b2b;border-radius:6px;padding:18px 20px;font-size:12.5px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;aspect-ratio:16/9;overflow:hidden;display:flex;gap:14px}
+.old h4{margin:0 0 6px;font-size:15px}
+.old p{margin:0 0 6px}
+.old canvas{width:96px;height:54px;flex:none;border:1px solid #999;align-self:flex-start;margin-top:26px}
+.new{aspect-ratio:16/9;border-radius:6px;overflow:hidden;position:relative;background:#000}
+.new canvas{width:100%;height:100%;display:block}
+.new .mini{position:absolute;left:0;right:0;bottom:8%;display:flex;justify-content:center;gap:6%;font-family:var(--display);font-size:clamp(12px,2vw,20px);color:var(--gold)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;left:0;right:0;top:0;z-index:4;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:calc(env(safe-area-inset-top,0px) + 14px)}
+.stat{font-family:var(--display);font-size:clamp(22px,3.2vw,40px);line-height:1;text-shadow:0 3px 0 #3b1a06,0 0 18px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
+.stat small{display:block;font-family:var(--body);font-weight:700;font-size:11px;letter-spacing:.22em;color:var(--muted);margin-bottom:4px}
+#crys{color:var(--crystal)}
+.lives{display:flex;gap:10px;padding-top:6px}
+.lives span{width:clamp(14px,1.8vw,22px);aspect-ratio:1;border-radius:50%;background:var(--ember);box-shadow:0 0 12px var(--ember);transition:all .25s}
+.lives span.lost{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,122,51,.4)}
+.hudR{display:flex;gap:18px;align-items:flex-start;text-align:right}
+#snd{pointer-events:auto;font-size:12px;font-weight:600;padding:8px 14px;color:var(--ink);margin-top:4px}
+#snd::before{background-image:var(--brush-ink,none);background-color:var(--brush-ink-fb,rgba(43,21,34,.8))}
+#snd[aria-pressed="false"]{color:var(--muted)}
+body.playing{cursor:none}
+
+#hint{position:fixed;left:50%;top:22%;transform:translate(-50%,0);z-index:4;font-family:var(--body);font-weight:400;font-size:clamp(20px,3.2vw,40px);color:#fff;
+  text-shadow:0 0 10px rgba(0,0,0,.8),0 0 22px rgba(255,120,230,.75);opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#hint.show{opacity:1}
+#count{position:fixed;inset:0;display:grid;place-items:center;z-index:6;pointer-events:none;font-family:var(--display);font-size:clamp(120px,24vw,320px);color:var(--gold);text-shadow:0 10px 0 #4a2208,0 0 60px rgba(240,181,74,.5)}
+#flash{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(255,77,61,0) 35%,rgba(255,77,61,.65) 100%)}
+.pop{position:fixed;z-index:4;pointer-events:none;font-family:var(--display);font-size:clamp(16px,2vw,26px);transform:translate(-50%,-50%);animation:pop .9s ease-out forwards;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+@keyframes pop{0%{opacity:0;margin-top:0;scale:.6}15%{opacity:1;scale:1.1}100%{opacity:0;margin-top:-70px;scale:1}}
+
+/* ---------- Game over ---------- */
+#over{background:var(--soot);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#over h2{font-family:var(--display);font-weight:400;font-size:clamp(36px,7vw,90px);margin:0;color:var(--gold);line-height:.9;text-shadow:0 6px 0 #4a2208}
+.score{font-family:var(--display);font-size:clamp(48px,9vw,120px);line-height:1;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px 28px;width:min(720px,100%)}
+.grid div{display:flex;flex-direction:column;gap:4px}
+.grid b{font-family:var(--display);font-weight:400;font-size:clamp(22px,3vw,34px);font-variant-numeric:tabular-nums}
+.grid span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.grid .m b{color:var(--crystal)}
+
+@media (prefers-reduced-motion: reduce){.pop{animation-duration:.5s}.kw{transition:none}}
+</style>
+
+<!-- roughens text edges so type reads as painted -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="3" seed="4" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+<canvas id="gl" aria-label="3D palace corridor"></canvas>
+<div id="flash"></div>
+
+<!-- Page 1 -->
+<section class="screen" id="intro">
+  <div class="eyebrow">10-minute short-format game · Prototype</div>
+  <h1>Palace<span>Run</span></h1>
+  <p class="tagline">The corridor is closing in. Keep your head clear and grab every crystal.</p>
+  <button class="cta" id="toBrief"><span class="lbl">Enter the palace</span></button>
+  <p class="fine">In the box your helmet is the controller. Here, your mouse, finger or <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> keys stand in for it.</p>
+</section>
+
+<!-- Page 2 -->
+<section class="screen" id="onboard" hidden>
+  <div class="tutwrap"><canvas id="tut" aria-label="Looping animation: a dot moves into the gap of an approaching wall, then into a crystal"></canvas></div>
+  <div class="keywords" aria-live="off">
+    <div class="kw" data-k="move"><i></i>Move your head</div>
+    <div class="kw" data-k="dodge"><i></i>Dodge</div>
+    <div class="kw" data-k="grab"><i></i>Grab</div>
+  </div>
+  <div class="row">
+    <button class="cta" id="go"><span class="fill"></span><span class="lbl">Touch to run</span></button>
+    <button class="ghost" id="cmpBtn">Compare with today's briefing</button>
+  </div>
+</section>
+
+<section class="screen" id="compare" hidden>
+  <div class="cmp">
+    <figure>
+      <div class="old">
+        <div>
+          <h4>HOW TO PLAY</h4>
+          <p>Welcome, adventurers! In this game your team must make its way along the palace corridor. Each player wears a visor that tracks the position of their head, and a marker on the wall shows where you are.</p>
+          <p>Walls will move towards you from the far end of the room. Each wall has a gap. Move your body so your marker passes through the gap. If your marker touches the wall you lose one of your three lives.</p>
+          <p>Along the way you will see crystals. Pass through them to collect bonus points. Sometimes a gem appears on the side walls: touch it with your hand before it passes.</p>
+          <p>The game gets faster the longer you survive. Work together, call out the gaps and have fun!</p>
+        </div>
+        <canvas id="tutSmall" width="192" height="108"></canvas>
+      </div>
+      <figcaption><b>Today (mock-up)</b>About 140 words to read on the wall, with the only moving example the size of a postcard. Groups stand and read, or skip it.</figcaption>
+    </figure>
+    <figure>
+      <div class="new"><canvas id="tutCmp"></canvas><div class="mini"><span>MOVE</span><span>DODGE</span><span>GRAB</span></div></div>
+      <figcaption><b>Proposed</b>The loop fills the wall and three keywords light up in time with it. Players copy the movement instead of reading about it. Wall gems are explained in the run, the first time one appears.</figcaption>
+    </figure>
+  </div>
+  <button class="ghost" id="cmpClose">Back to the briefing</button>
+</section>
+
+<!-- HUD -->
+<div id="hud" hidden>
+  <div class="stat"><small>SCORE</small><span id="score">0</span></div>
+  <div class="lives" id="lives"><span></span><span></span><span></span></div>
+  <div class="hudR">
+    <div class="stat" id="crys"><small>CRYSTALS</small><span id="crysN">0</span></div>
+    <button id="snd" aria-pressed="true">Sound on</button>
+  </div>
+</div>
+<div id="hint">Touch the wall gem!</div>
+<div id="count" hidden></div>
+
+<!-- Game over -->
+<section class="screen" id="over" hidden>
+  <h2>The palace got you</h2>
+  <div class="score" id="fScore">0</div>
+  <div class="grid">
+    <div><b id="fCrys">0</b><span>Crystals</span></div>
+    <div><b id="fGems">0</b><span>Wall gems</span></div>
+    <div><b id="fDodge">0</b><span>Walls dodged</span></div>
+    <div><b id="fBest">0</b><span>Best</span></div>
+  </div>
+  <div class="grid">
+    <div class="m"><b id="fBrief">0s</b><span>Time on briefing</span></div>
+    <div class="m"><b id="fEarly">0</b><span>Hits in first 30 s</span></div>
+    <div class="m"><b id="fFirst">–</b><span>First clean dodge</span></div>
+  </div>
+  <div class="row">
+    <button class="cta" id="again"><span class="lbl">Run again</span></button>
+    <button class="ghost" id="rebrief">Watch the briefing again</button>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= Renderer, scene, camera ================= */
+const W = 6, H = 4, HW = 3, CAM_Y = 2, REST_Y = 2.2, SPAWN_Z = -80;
+const canvas = $('#gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+// Colours are used as authored (no tone mapping, no sRGB conversion) so the palette matches the painted references.
+// Palette: dusk-rose sky, orange sun, dusky plum haze, teal water, cream / terracotta / sage stone, gold trim.
+// Depth focus: the haze is darker than the lit foreground, so the next gate is the brightest thing on screen and
+// everything further back sinks into dusk. The next gate is always within ~25 units, so it stays almost clear.
+const HAZE = 0x6e3f4c;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(HAZE);
+scene.fog = new THREE.Fog(HAZE, 18, 95); // the sky's horizon band fades into this same colour
+const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 1000);
+let camZ = 5;
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  const t = Math.tan(THREE.MathUtils.degToRad(31));
+  camZ = Math.max(5, 3.3 / (camera.aspect * t)); // keep the whole corridor width in view on narrow screens
+  camera.position.set(0, CAM_Y, camZ);
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+/* ================= Procedural textures ================= */
+const maxAniso = renderer.capabilities.getMaxAnisotropy();
+function tex(draw, size = 256, rx = 1, ry = 1) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'); draw(g, size);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(rx, ry); t.anisotropy = maxAniso; return t;
+}
+const rnd = (a, b) => a + Math.random() * (b - a);
+function grit(g, s, n, a) {
+  for (let i = 0; i < n; i++) {
+    const v = rnd(0, 255) | 0;
+    g.fillStyle = `rgba(${v},${(v * .85) | 0},${(v * .6) | 0},${a})`;
+    g.fillRect(rnd(0, s), rnd(0, s), rnd(1, 3), rnd(1, 3));
+  }
+}
+function moss(g, s, n) {
+  for (let i = 0; i < n; i++) {
+    g.fillStyle = `rgba(${rnd(50, 90) | 0},${rnd(100, 150) | 0},40,${rnd(.15, .35)})`;
+    g.beginPath(); g.arc(rnd(0, s), rnd(0, s), rnd(1, 4), 0, 7); g.fill();
+  }
+}
+// Plain lime plaster: soft mottling and grit. Neutral, so each wall's colour tints it.
+const plasterTex = tex((g, s) => {
+  g.fillStyle = '#e6e1da'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 70; i++) {
+    const x = rnd(0, s), y = rnd(0, s), r = rnd(30, 110), gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, Math.random() < .5 ? 'rgba(90,60,40,.035)' : 'rgba(255,255,255,.06)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  grit(g, s, 7000, .05);
+}, 512, .5, .5);
+
+// Water ripples: mostly flat grey with light and dark dashes; multiplies the water's vertex colours and scrolls.
+const rippleTex = tex((g, s) => {
+  g.fillStyle = 'rgb(214,214,214)'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 140; i++) {
+    g.fillStyle = Math.random() < .55 ? 'rgba(255,255,255,.55)' : 'rgba(150,150,150,.4)';
+    g.fillRect(rnd(0, s), rnd(0, s), rnd(8, 46), rnd(1, 2.5));
+  }
+}, 256, 30, 70);
+
+// Sun's reflection on the water: a column of broken horizontal strokes (ref: lake at sunset).
+const sunPathTex = (() => {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512; const g = c.getContext('2d');
+  for (let y = 0; y < 512; y += 3) {
+    const t = y / 512, half = 12 + t * 40;
+    for (let k = 0; k < 3; k++) {
+      const w = rnd(.3, 1) * half, x = 64 + rnd(-half, half) * .5;
+      g.fillStyle = `rgba(255,${(120 + rnd(0, 60)) | 0},${(70 + rnd(0, 30)) | 0},${rnd(.25, .8) * (1 - Math.abs(x - 64) / 70)})`;
+      g.fillRect(x - w / 2, y, w, rnd(1, 2.2));
+    }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapT = THREE.RepeatWrapping; return t;
+})();
+
+// Distant layers: hazy ridges, then a palace and cypresses on the horizon. Drawn once into transparent canvases.
+function ridgeTex(color, seed, peaks, palace) {
+  const c = document.createElement('canvas'); c.width = 2048; c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = color; g.beginPath(); g.moveTo(0, 256);
+  for (let x = 0; x <= 2048; x += 8) {
+    const u = x / 2048 * Math.PI * 2;
+    let y = .5 + .22 * Math.sin(u * peaks + seed) + .12 * Math.sin(u * peaks * 2.3 + seed * 3) + .05 * Math.sin(u * 17 + seed);
+    y *= Math.min(1, Math.abs(x - 1024) / 260 + .25); // dip in the middle so the sun sits in a valley
+    g.lineTo(x, 256 - 30 - y * 200);
+  }
+  g.lineTo(2048, 256); g.closePath(); g.fill();
+  if (palace) {
+    const base = 226; g.fillStyle = palace;
+    const dome = (x, y, r) => { g.beginPath(); g.moveTo(x - r, y); g.bezierCurveTo(x - r * 1.25, y - r * 1.1, x - r * .2, y - r * 1.35, x, y - r * 1.9); g.bezierCurveTo(x + r * .2, y - r * 1.35, x + r * 1.25, y - r * 1.1, x + r, y); g.fill(); g.fillRect(x - 1, y - r * 2.3, 2, r * .5); };
+    const px = 780; // palace left of the sun
+    g.fillRect(px - 120, base - 40, 240, 40); g.fillRect(px - 60, base - 70, 120, 32);
+    dome(px, base - 70, 40); dome(px - 85, base - 40, 18); dome(px + 85, base - 40, 18);
+    for (const mx of [-150, 150]) { g.fillRect(px + mx - 5, base - 130, 10, 130); dome(px + mx, base - 130, 9); }
+    for (const [x, hgt] of [[1290, 70], [1308, 92], [1326, 60], [1360, 80], [1378, 54]]) { // cypresses right of the sun
+      g.beginPath(); g.moveTo(x - 7, base); g.quadraticCurveTo(x - 9, base - hgt * .6, x, base - hgt); g.quadraticCurveTo(x + 9, base - hgt * .6, x + 7, base); g.fill();
+    }
+  }
+  const t = new THREE.CanvasTexture(c); return t;
+}
+const glowTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.25, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c);
+})();
+const shadowTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(0,0,0,.75)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+})();
+
+/* ================= Materials ================= */
+const M = {
+  // glass curbs: translucent sunset orange, shiny so the low sun catches the top edge
+  // unlit, so the scene lights can't push the orange towards yellow
+  curb: new THREE.MeshBasicMaterial({ color: 0xff6a1e, transparent: true, opacity: .5, depthWrite: false }),
+  curbEdge: new THREE.MeshBasicMaterial({ color: 0xffa860, transparent: true, opacity: .9, depthWrite: false }),
+  // walls: one plaster texture, tinted per wall (cream, terracotta, rose sandstone, sage)
+  obs: new THREE.MeshLambertMaterial({ map: plasterTex, color: 0xf6e6cf, emissive: 0x000000, transparent: true }),
+};
+const WALL_TINTS = [0xf6e6cf, 0xe0885e, 0xf0b39a]; // cream, terracotta, rose sandstone
+const spriteMat = (color, opacity = 1, fog = true) => new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, fog });
+
+/* ================= Lights: warm sky fill + low sun from behind the player's shoulder ================= */
+scene.add(new THREE.HemisphereLight(0xffc49a, 0x34474d, .85));
+const sunKey = new THREE.DirectionalLight(0xffd2a8, .5); sunKey.position.set(-4, 8, 10); scene.add(sunKey);
+const helmetLight = new THREE.PointLight(0xffe6b8, .9, 8, 2);
+scene.add(helmetLight);
+
+/* ================= Sky: three.js Sky addon (Preetham scattering) graded to sunset, painted sun on top ================= */
+// The addon gives physically based colour (orange horizon, deep zenith, glow round the sun). Its own sun is a
+// tiny dot, so the big painted disc stays, because the palace, the ridge valley and the water's sun path are framed on it.
+const SUN_EL = .10, SUN_R = .07;   // painted disc: centre ~6 deg above the horizon, ~4 deg radius (lower edge still in the ridge valley)
+const SCATTER_EL = .045;           // the scattering sun sits lower (~2.5 deg) so the air reads as sunset, not golden hour
+const SUN_DIR = new THREE.Vector3(0, Math.sin(SUN_EL), -Math.cos(SUN_EL));
+const sky = new THREE.Sky();
+sky.scale.setScalar(800);          // camera stays near the centre; the shader pins the sky to the far plane
+{
+  const u = sky.material.uniforms;
+  u.turbidity.value = 10;          // hazy air: a wide warm glow
+  u.rayleigh.value = 3;            // strong scattering: red-orange low down, plum overhead after grading
+  u.mieCoefficient.value = .006;
+  u.mieDirectionalG.value = .82;
+  u.sunPosition.value.set(0, Math.sin(SCATTER_EL), -Math.cos(SCATTER_EL));
+  Object.assign(u, {
+    uExposure: { value: .5 }, uFogColor: { value: new THREE.Color(HAZE) },
+    uSunDisc: { value: SUN_DIR }, uSunR: { value: SUN_R },
+  });
+  // The renderer runs without tone mapping (the painted palette is used as authored), so the sky tone-maps itself:
+  // ACES, then a warm grade, a haze band that melts into the fog colour, and the painted sun.
+  sky.material.fragmentShader = sky.material.fragmentShader
+    .replace('uniform vec3 up;', 'uniform vec3 up; uniform float uExposure, uSunR; uniform vec3 uFogColor, uSunDisc;')
+    .replace(/#include <tonemapping_fragment>\s*#include <encodings_fragment>/, `
+      vec3 c = gl_FragColor.rgb * uExposure;
+      c = clamp((c * (2.51 * c + .03)) / (c * (2.43 * c + .59) + .14), 0.0, 1.0); // ACES fit
+      c = pow(c, vec3(1.0 / 2.2));
+      float h = direction.y;
+      c *= vec3(1.12, .86, .76);                                                   // sunset grade
+      c = mix(vec3(dot(c, vec3(.299, .587, .114))), c, 1.3);                       // a little more saturation
+      c = mix(c, vec3(.84, .40, .36), smoothstep(.04, .3, h) * .4);                // coral band
+      c = mix(c, vec3(.33, .14, .27), smoothstep(.2, .85, h) * .72);               // dusk plum overhead
+      c *= .72;                                                                    // keep the backdrop darker than the play space
+      c = mix(c, uFogColor, smoothstep(.14, -.01, h) * .92);                      // haze band into the fog
+      float a = acos(clamp(dot(direction, uSunDisc), -1.0, 1.0));
+      c += vec3(1.0, .59, .35) * (exp(-a * 6.0) * .14 + exp(-a * 20.0) * .16);    // glow (softer, so it doesn't pull the eye)
+      for (int i = 0; i < 2; i++) {                                                // thin cloud streaks across the sun
+        float y = uSunDisc.y - .045 + float(i) * .07;
+        float band = exp(-pow((h - y) / .005, 2.0)) * smoothstep(.55, .05, abs(direction.x + .12 - float(i) * .2));
+        c = mix(c, vec3(.93, .5, .44), band * .7);
+      }
+      float disc = smoothstep(uSunR + .003, uSunR - .003, a);
+      float sy = clamp((h - (uSunDisc.y - uSunR)) / (2.0 * uSunR), 0.0, 1.0);
+      c = mix(c, mix(vec3(1.0, .41, .22), vec3(1.0, .66, .36), sy), disc);
+      gl_FragColor = vec4(c, 1.0);`);
+}
+sky.renderOrder = -10; scene.add(sky);
+
+// Stars: a sparse field of tiny, faint points high in the plum part of the sky, kept clear of the sun.
+// Fixed in place (they don't scroll with the run); each one glows softly and twinkles slowly.
+const STARS = 140;
+const starMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uTime: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uTwinkle: { value: reduceMotion ? 0 : 1 } },
+  vertexShader: `
+    attribute float aSize, aPhase, aBright; uniform float uTime, uPR, uTwinkle; varying float vA;
+    void main() {
+      float tw = mix(1.0, .55 + .45 * sin(uTime * (.6 + aPhase * .25) + aPhase * 6.283), uTwinkle);
+      float h = normalize(position).y;
+      vA = aBright * tw * smoothstep(.16, .42, h);                   // fade out into the warm horizon glow
+      gl_PointSize = aSize * uPR;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: `
+    varying float vA;
+    void main() {
+      float d = length(gl_PointCoord - .5) * 2.0;
+      float glow = exp(-d * d * 5.0) * .55 + smoothstep(.35, 0.0, d) * .45; // soft halo + bright core
+      gl_FragColor = vec4(vec3(1.0, .93, .86) * glow * vA, 1.0);
+    }`,
+});
+{
+  const pos = new Float32Array(STARS * 3), size = new Float32Array(STARS), phase = new Float32Array(STARS), bright = new Float32Array(STARS);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < STARS; i++) {
+    do { // upper sky, forward-facing hemisphere, not near the sun
+      const el = Math.asin(rnd(Math.sin(.2), Math.sin(1.1))), az = rnd(-1.5, 1.5);
+      v.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
+    } while (v.angleTo(SUN_DIR) < .45);
+    v.multiplyScalar(450).toArray(pos, i * 3);
+    const big = Math.random() < .12;                                  // a few slightly brighter ones
+    size[i] = big ? rnd(3.5, 5) : rnd(2, 3.2);
+    bright[i] = big ? rnd(.35, .5) : rnd(.12, .28);
+    phase[i] = Math.random();
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+  g.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1));
+  g.setAttribute('aBright', new THREE.BufferAttribute(bright, 1));
+  const stars = new THREE.Points(g, starMat); stars.renderOrder = -9.5; stars.frustumCulled = false; scene.add(stars);
+}
+
+// Horizon layers, back to front: hazy far ridge, slate ridge with the palace and cypresses.
+function horizonLayer(texture, w, hgt, z) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hgt), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, fog: false }));
+  m.position.set(0, hgt / 2 - 1.2, z); m.renderOrder = -9; scene.add(m); return m;
+}
+horizonLayer(ridgeTex('#7f4c58', 1.3, 3), 1500, 44, -480);   // dimmed to sit in the dusk haze
+horizonLayer(ridgeTex('#4d3141', 4.1, 5, '#4d3141'), 1000, 26, -330);
+
+// Water to the horizon. Vertex colours run deep teal (near) to sky peach (far); fog finishes the blend.
+const waterGeo = new THREE.PlaneGeometry(1000, 520, 1, 40); waterGeo.rotateX(-Math.PI / 2); waterGeo.translate(0, 0, -250);
+{
+  const pos = waterGeo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const near = new THREE.Color(0x24474a), mid = new THREE.Color(0x6f7c72), far = new THREE.Color(0xf3b98e);
+  for (let i = 0; i < pos.count; i++) {
+    const t = THREE.MathUtils.clamp(-pos.getZ(i) / 260, 0, 1);
+    if (t < .3) c.copy(near).lerp(mid, t / .3); else c.copy(mid).lerp(far, (t - .3) / .7);
+    c.multiplyScalar(1.12); col.set([c.r, c.g, c.b], i * 3);
+  }
+  waterGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+}
+const water = new THREE.Mesh(waterGeo, new THREE.MeshBasicMaterial({ map: rippleTex, vertexColors: true }));
+water.position.y = -.35; scene.add(water);
+const sunPath = new THREE.Mesh(new THREE.PlaneGeometry(26, 420), new THREE.MeshBasicMaterial({ map: sunPathTex, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+sunPath.rotation.x = -Math.PI / 2; sunPath.position.set(0, -.33, -250); scene.add(sunPath);
+
+// The causeway: one long floor plane and two curbs; the tile pattern scrolls, so nothing is re-created.
+// Glass floor: one seamless translucent sheet over the water, with no reflections (no sky, no sun glint).
+// It is clearer underfoot and a little more solid at grazing angles, then fades into the fog.
+const FLOOR_L = 200, TILES_X = 3, TILES_Z = FLOOR_L / 2;
+const floorMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: true, fog: false,
+  uniforms: {
+    uScroll: { value: 0 }, uTime: { value: 0 },
+    uSunDir: { value: new THREE.Vector3(0, Math.sin(SUN_EL), -Math.cos(SUN_EL)) },
+    uFogColor: { value: new THREE.Color(HAZE) }, uFogNear: { value: scene.fog.near }, uFogFar: { value: scene.fog.far },
+  },
+  vertexShader: `
+    varying vec2 vUv; varying vec3 vWorld;
+    void main() { vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+  fragmentShader: `
+    uniform float uFogNear, uFogFar; uniform vec3 uFogColor;
+    varying vec2 vUv; varying vec3 vWorld;
+    void main() {
+      vec3 V = normalize(vWorld - cameraPosition);
+      float graze = pow(1.0 - abs(V.y), 5.0);       // 0 looking straight down, 1 along the floor
+      vec3 col = vec3(.94, .95, .96);                // soft white frosted glass
+      float a = .14 + graze * .30;                   // mostly see-through: the water shows through
+      float fogF = smoothstep(uFogNear, uFogFar, length(vWorld - cameraPosition));
+      gl_FragColor = vec4(mix(col, uFogColor, fogF), clamp(mix(a, 1.0, fogF), 0.0, .96));
+    }`,
+});
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, FLOOR_L), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 15 - FLOOR_L / 2); floor.renderOrder = -1; scene.add(floor);
+for (const sx of [-1, 1]) {
+  const c = new THREE.Mesh(new THREE.BoxGeometry(.5, .7, FLOOR_L), M.curb); c.position.set(sx * (HW + .25), -.05, 15 - FLOOR_L / 2); scene.add(c);
+  // hairline frosted edges along the top corners so the clear rail still reads against the water
+  for (const ex of [-.24, .24]) {
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(.025, .025, FLOOR_L), M.curbEdge);
+    edge.position.set(sx * (HW + .25) + ex, .3, 15 - FLOOR_L / 2); scene.add(edge);
+  }
+}
+
+// Birds drifting past the sun.
+const birdGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, -.3, 0), new THREE.Vector3(0, -.3, 0), new THREE.Vector3(1, 0, 0)]);
+const birdMat = new THREE.LineBasicMaterial({ color: 0x4a2a38, fog: false });
+const birds = [];
+for (let i = 0; i < 7; i++) {
+  const b = new THREE.LineSegments(birdGeo, birdMat);
+  b.position.set(rnd(-60, 50), rnd(26, 60), -300 + rnd(-20, 20)); const s = rnd(1.2, 2.2); b.scale.set(s, s, s);
+  scene.add(b); birds.push({ b, s, seed: rnd(0, 6), f: rnd(5, 8), vx: rnd(1.5, 3) });
+}
+
+/* ================= Dust motes ================= */
+const DUST = 60;
+const dustGeo = new THREE.BufferGeometry();
+const dustPos = new Float32Array(DUST * 3);
+for (let i = 0; i < DUST; i++) { dustPos[i * 3] = rnd(-HW, HW); dustPos[i * 3 + 1] = rnd(0, H); dustPos[i * 3 + 2] = rnd(SPAWN_Z, camZ); }
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xffd9a0, size: .05, transparent: true, opacity: .6, depthWrite: false, blending: THREE.AdditiveBlending }));
+scene.add(dust);
+
+/* ================= The head pointer ================= */
+const pointer = { x: 0, y: REST_Y, tx: 0, ty: REST_Y };
+// The pointer is a character, as in Wayfinder (NFB), where you steer a little cloaked figure by pointing.
+// This one is our own wanderer, painted in the sunset palette and seen from behind, looking down the road with
+// the player. A round teal hood tilts its head into each turn (a spring, so it overshoots and settles), its soft
+// crown trails behind, a scalloped mantle sits on the shoulders, and a wide magenta cloak with a darker lining
+// flows behind the movement. The cloth is a set of damped springs per hem point,
+// looser at the edges, plus a travelling wave, so it lags, billows and settles instead of
+// snapping. It's drawn on a 2D canvas each frame, so the same function also draws it in the briefing loop; each
+// canvas keeps its own spring state.
+const HEM = 9, wanderState = new WeakMap();
+const springTo = (p, tx, ty, k, d, h) => {
+  p.vx += ((tx - p.x) * k - p.vx * d) * h; p.vy += ((ty - p.y) * k - p.vy * d) * h;
+  p.x += p.vx * h; p.y += p.vy * h;
+};
+const node = () => ({ x: 0, y: 0, vx: 0, vy: 0 });
+function stepWanderer(st, t, vx, vy, dt) {
+  const sp = Math.min(1, Math.hypot(vx, vy));
+  for (let n = Math.ceil(dt / (1 / 90)), h = dt / n; n > 0; n--) {
+    for (let i = 0; i < HEM; i++) {
+      const u = i / (HEM - 1), e = Math.abs(u - .5) * 2;
+      const dx = -vx * (.3 + .2 * e) + Math.sin(t * 3.1 - u * 5.5) * .035 * (1 + sp * 2);
+      const dy = -Math.abs(vx) * (.1 + .18 * e) + vy * .12 + Math.sin(t * 4.3 - u * 7 + 1.3) * .1 * (.6 + sp);
+      springTo(st.hem[i], dx, dy, 70 - 30 * e, 8, h);
+      springTo(st.lin[i], dx * 1.15, dy * 1.1 - .02, 38 - 14 * e, 5, h); // the lining lags further: layered cloth
+    }
+    springTo(st.head, vx * .34 + Math.sin(t * 1.3) * .05, -vy * .04 + Math.sin(t * 2.6) * .008, 45, 6, h);
+    springTo(st.tip, -vx * .22 + Math.sin(t * 2) * .03 - st.head.x * .15, Math.abs(vx) * .06 + vy * .04, 30, 4, h);
+  }
+}
+function drawWanderer(g, x, y, s, o) {
+  const t = o.t, vx = Math.max(-1, Math.min(1, o.vx || 0)), vy = Math.max(-1, Math.min(1, o.vy || 0));
+  let st = wanderState.get(g);
+  if (!st) {
+    st = { t, hem: Array.from({ length: HEM }, node), lin: Array.from({ length: HEM }, node),
+      head: node(), tip: node() };
+    wanderState.set(g, st);
+  }
+  const dt = t - st.t; st.t = t;
+  if (dt > 0) stepWanderer(st, t, vx, vy, Math.min(dt, .1)); // a looping clock (briefing) jumps back: skip that frame
+
+  g.save();
+  g.translate(x, y + Math.sin(t * 3) * s * .04);
+  g.scale(s, s);
+  g.rotate(vx * .1);
+  g.lineCap = g.lineJoin = 'round';
+
+  const hemPt = (p, i) => { const u = i / (HEM - 1); return [-.82 + 1.64 * u + p.x, .9 + .1 * Math.sin(Math.PI * u) + p.y]; };
+  const capePath = pts => {
+    const P = pts.map(hemPt), L = P[0], R = P[HEM - 1];
+    g.beginPath(); g.moveTo(-.2, -.12); // top edge tucked under the mantle so it never shows at the neck
+    g.bezierCurveTo(-.36, .02, -.66 + pts[0].x * .5, .5 + pts[0].y * .4, L[0], L[1]); // sides bow outward
+    for (let i = 0; i < HEM - 1; i++) { // the hem is a row of rounded scallops that breathe as it moves
+      const mx = (P[i][0] + P[i + 1][0]) / 2, my = (P[i][1] + P[i + 1][1]) / 2;
+      g.quadraticCurveTo(mx, my + .17 + Math.sin(t * 3.4 + i * 1.7) * .04, P[i + 1][0], P[i + 1][1]);
+    }
+    g.bezierCurveTo(.66 + pts[HEM - 1].x * .5, .5 + pts[HEM - 1].y * .4, .36, .02, .2, -.12);
+    g.quadraticCurveTo(0, -.16, -.2, -.12); g.closePath();
+    return P;
+  };
+  g.save(); g.translate(0, -.24); g.scale(1.1, 1.1); g.translate(0, .24); // cloak drawn 10% larger, about the shoulders
+  // cloak lining (darker, lags behind the outer layer so it peeks out on the trailing side)
+  capePath(st.lin); g.fillStyle = '#6e0f52'; g.fill();
+  // cloak: wide, gradient, dry-brush streaks, folds running down to each scallop
+  const P = capePath(st.hem);
+  const cg = g.createLinearGradient(0, -.3, 0, 1); cg.addColorStop(0, '#f455c8'); cg.addColorStop(1, '#b8137f');
+  g.fillStyle = cg; g.fill();
+  g.save(); g.clip(); g.globalAlpha = .8; // the painted designs sit at 20% transparency
+  g.strokeStyle = 'rgba(80,8,60,.16)'; g.lineWidth = .03;
+  for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(-1, .05 + k * .2); g.lineTo(1, .02 + k * .2 + P[4][0] * .15); g.stroke(); }
+  for (let i = 1; i < HEM - 1; i++) {
+    const u = i / (HEM - 1), [hx, hy] = P[i];
+    g.strokeStyle = i % 2 ? 'rgba(80,8,60,.3)' : 'rgba(255,190,235,.28)'; g.lineWidth = i % 2 ? .035 : .022;
+    g.beginPath(); g.moveTo(-.14 + u * .28, -.12); g.quadraticCurveTo((-.14 + u * .28 + hx) / 2 + st.hem[i].x * .2, (hy - .12) / 2, hx, hy - .04); g.stroke();
+  }
+  g.restore();
+  // cream zigzag trim riding the hem
+  g.globalAlpha = .3; g.strokeStyle = '#fff6e8'; g.lineWidth = .035; g.beginPath(); /* zigzag at 30% opacity */
+  P.forEach(([hx, hy], i) => { const py = hy - .15 + (i % 2 ? -.04 : .04); i ? g.lineTo(hx * .92, py) : g.moveTo(hx * .92, py); });
+  g.stroke(); g.globalAlpha = 1;
+  g.restore();
+  // shoulder mantle: three scallops, follows the head a little
+  const hd = st.head, mx = hd.x * .05;
+  g.beginPath(); g.moveTo(-.42 + mx, -.1);
+  for (let k = 0; k < 3; k++) { const x0 = -.42 + k * .28 + mx; g.quadraticCurveTo(x0 + .14, .14 + (k === 1 ? .03 : 0), x0 + .28, -.02 + (k === 2 ? -.08 : 0)); }
+  g.quadraticCurveTo(mx, -.36, -.42 + mx, -.1); g.closePath();
+  const mg = g.createLinearGradient(-.4, 0, .4, 0); mg.addColorStop(0, '#1f4c49'); mg.addColorStop(1, '#2f716b');
+  g.fillStyle = mg; g.fill(); g.strokeStyle = 'rgba(255,240,220,.3)'; g.lineWidth = .02; g.stroke();
+  // head (back of the hood), tilting into the turn
+  g.fillStyle = '#1b3f3c'; g.beginPath(); g.ellipse(hd.x * .04, -.2, .24, .1, 0, 0, 7); g.fill(); // neck: fills any gap under a swinging hood
+  const tilt = Math.max(-.32, Math.min(.32, hd.x)); // cap the overshoot so the hood never swings clear of the shoulders
+  g.save();
+  g.translate(tilt * .04, -.24 + hd.y);
+  g.rotate(tilt);
+  const tipX = st.tip.x, tipY = -.72 + st.tip.y;
+  g.beginPath(); g.moveTo(-.38, 0); // a rounded dome: the crown flattens into the top instead of a point
+  g.bezierCurveTo(-.5, -.42, -.34, tipY + .02, tipX, tipY);
+  g.bezierCurveTo(.34, tipY + .02, .5, -.42, .38, 0);
+  g.quadraticCurveTo(0, .1, -.38, 0);
+  const hg = g.createLinearGradient(-.38, 0, .38, 0); hg.addColorStop(0, '#2a625e'); hg.addColorStop(1, '#4a9a92');
+  g.fillStyle = hg; g.fill();
+  const turn = Math.min(1, Math.abs(tilt) / .22), dir = Math.sign(tilt) || 1;
+  if (turn > .05) { // three-quarter back view: the hood opening and one eye show on the side it's turning to
+    g.save(); g.clip(); g.globalAlpha = turn;
+    g.fillStyle = '#2b1522'; g.beginPath(); g.ellipse(dir * .42, -.2, .14, .17, 0, 0, 7); g.fill();
+    if (turn > .35 && (t % 4.3) >= .13) { g.fillStyle = '#fff6dc'; g.beginPath(); g.arc(dir * .33, -.22, .03, 0, 7); g.fill(); }
+    g.restore();
+  }
+  g.strokeStyle = 'rgba(255,240,220,.25)'; g.lineWidth = .02; // rim light on the lit side
+  g.beginPath(); g.moveTo(.34, -.04); g.bezierCurveTo(.46, -.4, .32, tipY + .02, tipX, tipY); g.stroke();
+  g.restore();
+  g.restore();
+}
+
+const P = new THREE.Group();
+const halo = new THREE.Sprite(spriteMat(0xffcf70, .5)); halo.scale.set(1.3, 1.3, 1);
+const wanderCv = document.createElement('canvas'); wanderCv.width = wanderCv.height = 320; // room for the cloak at full swing
+const wanderCtx = wanderCv.getContext('2d');
+const wanderTex = new THREE.CanvasTexture(wanderCv);
+const wanderer = new THREE.Sprite(new THREE.SpriteMaterial({ map: wanderTex, transparent: true, depthWrite: false }));
+wanderer.scale.set(1.7, 1.7, 1); wanderer.position.y = .04;
+P.add(halo, wanderer); scene.add(P);
+const pv = { x: 0, y: REST_Y, vx: 0, vy: 0 }; // smoothed pointer velocity drives the lean, head tilt and cloth
+function paintWanderer(t) {
+  wanderCtx.clearRect(0, 0, 320, 320);
+  drawWanderer(wanderCtx, 160, 166, 86, { t, vx: pv.vx, vy: pv.vy });
+  wanderTex.needsUpdate = true;
+}
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; scene.add(shadow);
+
+/* ================= Obstacles ================= */
+// Each type is the OPENING (safe zone) in corridor coordinates: [x0, x1, y0, y1], corridor is x -3..3, y 0..4
+const TYPES = {
+  LEFT: [-3, -.35, 0, 4], RIGHT: [.35, 3, 0, 4], CENTER: [-1.2, 1.2, 0, 4],
+  DUCK: [-3, 3, 0, 1.8], RISE: [-3, 3, 2.75, 4],
+  LOWLEFT: [-3, .1, 0, 2.1], HIGHRIGHT: [-.1, 3, 1.9, 4], LOWRIGHT: [-.1, 3, 0, 2.1], HIGHLEFT: [-3, .1, 1.9, 4],
+};
+const WAVES = [
+  { at: 0, types: ['LEFT', 'RIGHT'] },
+  { at: 14, types: ['LEFT', 'RIGHT', 'CENTER', 'DUCK'] },
+  { at: 30, types: ['LEFT', 'RIGHT', 'CENTER', 'DUCK', 'RISE', 'LOWLEFT', 'HIGHRIGHT'] },
+  { at: 50, types: ['CENTER', 'DUCK', 'RISE', 'LOWLEFT', 'HIGHRIGHT', 'LOWRIGHT', 'HIGHLEFT'] },
+];
+const obstacles = [], crystals = [], gems = [];
+const PR = .17; // pointer collision radius: a little forgiving
+
+// Each wall is a gateway: a plaster wall with pillars and a scalloped parapet, cut by an arch that sits INSIDE the
+// safe rectangle (so what looks open is always safe). Doors get pointed arches, windows round ones.
+const WALL_TOP = 5.3, OUT_X = 3.9, PILLAR_W = .55, WALL_D = .5;
+function archPath(p, a) {
+  const { x0, x1, yb, spring, peak, pointed } = a, w = x1 - x0, mx = (x0 + x1) / 2, rise = peak - spring;
+  p.moveTo(x0, yb); p.lineTo(x1, yb); p.lineTo(x1, spring);
+  if (pointed) {
+    p.bezierCurveTo(x1, spring + rise * .62, mx + w * .16, peak - rise * .18, mx, peak);
+    p.bezierCurveTo(mx - w * .16, peak - rise * .18, x0, spring + rise * .62, x0, spring);
+  } else {
+    const k = .5523;
+    p.bezierCurveTo(x1, spring + rise * k, mx + w / 2 * k, peak, mx, peak);
+    p.bezierCurveTo(mx - w / 2 * k, peak, x0, spring + rise * k, x0, spring);
+  }
+  p.lineTo(x0, yb);
+  return p;
+}
+function archFor(open, pad) {
+  const [x0, x1, y0, y1] = open, w = x1 - x0, full = y1 >= H;
+  const peak = full ? 4.5 : y1;                                   // full-height openings arch above the play space
+  const rise = full ? Math.min(w * .5, 1.5) : Math.min(w * .5, .75, (y1 - y0) * .45);
+  return { x0: x0 - pad, x1: x1 + pad, yb: y0 <= 0 ? -.15 - pad : y0 - pad, spring: peak - rise, peak: peak + pad, pointed: y0 <= 0 };
+}
+function wallOutline() {
+  const s = new THREE.Shape(), X = OUT_X, P = X - PILLAR_W, B = -.3, T = WALL_TOP, PT = T + .5, n = 11, step = 2 * P / n;
+  s.moveTo(-X, B); s.lineTo(X, B); s.lineTo(X, PT);
+  s.quadraticCurveTo(X - PILLAR_W / 2, PT + .75, P, PT); s.lineTo(P, T);   // domed pillar cap
+  for (let i = 0; i < n; i++) {                                           // kangura (leaf-shaped) merlons
+    const a = P - i * step, b = a - step, m = (a + b) / 2;
+    s.lineTo(a - step * .12, T); s.quadraticCurveTo(a - step * .1, T + .3, m, T + .42); s.quadraticCurveTo(b + step * .1, T + .3, b + step * .12, T); s.lineTo(b, T);
+  }
+  s.lineTo(-P, PT); s.quadraticCurveTo(-X + PILLAR_W / 2, PT + .75, -X, PT); s.lineTo(-X, B);
+  return s;
+}
+const geoCache = {};
+function gatewayGeo(typeName) {
+  if (geoCache[typeName]) return geoCache[typeName];
+  const open = TYPES[typeName], opts = { depth: WALL_D, bevelEnabled: false, curveSegments: 10 };
+  const outline = wallOutline(); outline.holes.push(archPath(new THREE.Path(), archFor(open, 0)));
+  const wall = new THREE.ExtrudeGeometry(outline, opts); wall.translate(0, 0, -WALL_D / 2);
+  return (geoCache[typeName] = { wall });
+}
+function spawnObstacle(typeName) {
+  const open = TYPES[typeName];
+  const g = new THREE.Group();
+  const mat = M.obs.clone();
+  mat.color.setHex(WALL_TINTS[(Math.random() * WALL_TINTS.length) | 0]);
+  const { wall } = gatewayGeo(typeName);
+  g.add(new THREE.Mesh(wall, mat));
+  g.position.z = SPAWN_Z; scene.add(g);
+  const o = { g, open, mat, passed: false, flash: 0, hit: false, type: typeName };
+  obstacles.push(o);
+  return o;
+}
+function removeObstacle(i) { const o = obstacles[i]; scene.remove(o.g); o.mat.dispose(); obstacles.splice(i, 1); }
+function openingCentre(open) {
+  const [x0, x1, y0, y1] = open;
+  return [THREE.MathUtils.clamp((x0 + x1) / 2, -2.4, 2.4), THREE.MathUtils.clamp((y0 + y1) / 2, .6, 3.4)];
+}
+
+/* ================= Crystals and wall gems ================= */
+const crysGeo = new THREE.OctahedronGeometry(.24, 0);
+const crysMat = new THREE.MeshStandardMaterial({ color: 0x8ff6ff, emissive: 0x1fb6d6, emissiveIntensity: 1.1, metalness: .3, roughness: .12, flatShading: true });
+function spawnCrystal(x, y, z) {
+  const m = new THREE.Mesh(crysGeo, crysMat); m.scale.set(1, 1.5, 1);
+  const glow = new THREE.Sprite(spriteMat(0x56e6ff, .7)); glow.scale.set(1.1, 1.1, 1);
+  const g = new THREE.Group(); g.add(glow, m); g.position.set(x, y, z); scene.add(g);
+  crystals.push({ g, m, x, y, taken: false, spin: Math.random() * 6 });
+}
+const gemGeo = new THREE.IcosahedronGeometry(.3, 0);
+const gemMat = new THREE.MeshStandardMaterial({ color: 0xff8af0, emissive: 0xc0209a, emissiveIntensity: 1.3, metalness: .3, roughness: .15, flatShading: true });
+const hitGeo = new THREE.SphereGeometry(.75, 8, 6);
+const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+function spawnGem() {
+  const side = Math.random() < .5 ? -1 : 1, y = rnd(1.3, 2.7);
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(gemGeo, gemMat);
+  const glow = new THREE.Sprite(spriteMat(0xff5ce0, .8)); glow.scale.set(1.4, 1.4, 1);
+  const halo2 = new THREE.Mesh(new THREE.RingGeometry(.42, .5, 32), new THREE.MeshBasicMaterial({ color: 0xff9cf2, transparent: true, opacity: .8, side: THREE.DoubleSide }));
+  halo2.rotation.y = side * Math.PI / 2;
+  const hit = new THREE.Mesh(hitGeo, hitMat);
+  g.add(glow, m, halo2, hit);
+  g.position.set(side * (HW - .35), y, SPAWN_Z); scene.add(g);
+  const o = { g, m, halo: halo2, hit, side, taken: false };
+  hit.userData.gem = o; gems.push(o);
+}
+
+/* ================= Sparkles and pop-up text ================= */
+const sparks = [];
+for (let i = 0; i < 90; i++) { const s = new THREE.Sprite(spriteMat(0xffffff, 0)); s.visible = false; scene.add(s); sparks.push({ s, v: new THREE.Vector3(), life: 0 }); }
+function burst(pos, color, n = 18, power = 3) {
+  let k = 0;
+  for (const p of sparks) {
+    if (p.life > 0) continue;
+    p.s.material.color.setHex(color); p.s.position.copy(pos); p.s.visible = true;
+    p.v.set(rnd(-1, 1), rnd(-.6, 1.2), rnd(-.4, 1)).normalize().multiplyScalar(rnd(.4, 1) * power);
+    p.life = rnd(.4, .75); p.max = p.life; p.size = rnd(.12, .28);
+    if (++k >= n) break;
+  }
+}
+const _v = new THREE.Vector3();
+function pop(text, pos, color) {
+  _v.copy(pos).project(camera);
+  const el = document.createElement('div'); el.className = 'pop'; el.textContent = text; el.style.color = color;
+  el.style.left = ((_v.x + 1) / 2 * innerWidth) + 'px'; el.style.top = ((1 - _v.y) / 2 * innerHeight) + 'px';
+  document.body.appendChild(el); setTimeout(() => el.remove(), 950);
+}
+
+/* ================= Sound (tiny synth, starts after a click) ================= */
+let actx = null, soundOn = true, music = null;
+function audio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+  if (actx && actx.state === 'suspended') actx.resume();
+  if (actx && !music) music = createMusic(actx);
+}
+
+/* ================= Music: a generative, soothing score (our own code, so free to use and share) =================
+   In the spirit of Wayfinder's soundtrack: slow warm pads under sparse, reverberant piano-like notes, over a quiet
+   bed of lapping water. Four chords in D major, 9.6 s each (Dmaj9, Bm7, Gmaj7, A). The melody wanders the D major
+   pentatonic scale, so any two notes sound good together, and crystals play notes from the same scale. */
+function createMusic(ac) {
+  const now = () => ac.currentTime;
+  const out = ac.createGain(); out.gain.value = 0; out.connect(ac.destination);
+  out.gain.setTargetAtTime(soundOn ? .55 : 0, now(), 1.5); // slow fade-in
+  // reverb: a generated 4.5 s decaying-noise impulse
+  const rev = ac.createConvolver(), len = ac.sampleRate * 4.5, ir = ac.createBuffer(2, len, ac.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+  rev.buffer = ir;
+  const wet = ac.createGain(); wet.gain.value = .5; rev.connect(wet).connect(out);
+  const dry = ac.createGain(); dry.gain.value = .6; dry.connect(out);
+  const send = n => { n.connect(dry); n.connect(rev); };
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  // water bed: looping brown noise, low-passed, with a slow swell
+  {
+    const nb = ac.createBuffer(1, ac.sampleRate * 8, ac.sampleRate), d = nb.getChannelData(0); let l = 0;
+    for (let i = 0; i < d.length; i++) { l = (l + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = l * 3.5; }
+    const fade = ac.sampleRate * .5; for (let i = 0; i < fade; i++) { const k = i / fade; d[i] *= k; d[d.length - 1 - i] *= k; } // soften the loop seam
+    const src = ac.createBufferSource(); src.buffer = nb; src.loop = true;
+    const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 480;
+    const g = ac.createGain(); g.gain.value = .06;
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .08; lg.gain.value = .03; lfo.connect(lg).connect(g.gain); lfo.start();
+    src.connect(f).connect(g); g.connect(out); src.start();
+  }
+
+  function pad(t0, notes, dur) {
+    for (const m of notes.slice(0, 4)) {
+      const g = ac.createGain(), f = ac.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = 760; f.Q.value = .3;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.03, t0 + 3.5);
+      g.gain.setValueAtTime(.03, t0 + dur); g.gain.linearRampToValueAtTime(0, t0 + dur + 3.5);
+      for (const [type, cents] of [['sine', -6], ['triangle', 6]]) {
+        const o = ac.createOscillator(); o.type = type; o.frequency.value = mtof(m); o.detune.value = cents;
+        o.connect(f); o.start(t0); o.stop(t0 + dur + 3.6);
+      }
+      f.connect(g); send(g);
+    }
+  }
+  // a soft felt-piano-ish note: fundamental + quiet overtones, fast attack, long decay, mostly reverb
+  function pluck(t, m, v = .1) {
+    const g = ac.createGain(), f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2200;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + 3.2);
+    for (const [mul, a, type] of [[1, 1, 'sine'], [2, .22, 'triangle'], [3, .05, 'sine']]) {
+      const o = ac.createOscillator(), og = ac.createGain(); o.type = type; o.frequency.value = mtof(m) * mul; og.gain.value = a;
+      o.connect(og).connect(f); o.start(t); o.stop(t + 3.3);
+    }
+    f.connect(g); send(g);
+  }
+
+  const CHORDS = [[50, 57, 62, 64, 69], [47, 54, 59, 62, 66], [43, 50, 55, 59, 66], [45, 52, 57, 61, 64]];
+  const SCALE = [62, 64, 66, 69, 71, 74, 76, 78, 81]; // D major pentatonic, D4 to A5
+  const BAR = 9.6, STEPS = 12, STEP = BAR / STEPS;
+  let next = now() + .4, step = 0, bar = 0, idx = 3;
+  setInterval(() => {
+    if (ac.state !== 'running') return;
+    if (next < now()) next = now() + .1; // after the tab was asleep
+    while (next < now() + 1.5) {
+      const ch = CHORDS[bar % 4];
+      if (step === 0) { pad(next, ch, BAR); pluck(next, ch[0], .07); }
+      else {
+        const density = mode === 'play' ? .42 : mode === 'over' ? .18 : .3;
+        if (Math.random() < density) {
+          idx = Math.max(0, Math.min(SCALE.length - 1, idx + [-2, -1, 1, 1, 2][(Math.random() * 5) | 0]));
+          pluck(next + Math.random() * .06, SCALE[idx], .06 + Math.random() * .05);
+        }
+      }
+      next += STEP; if (++step === STEPS) { step = 0; bar++; }
+    }
+  }, 250);
+
+  return {
+    setOn(on) { out.gain.cancelScheduledValues(now()); out.gain.setTargetAtTime(on ? .55 : 0, now(), .4); },
+    note(i, v = .14, delay = 0) { if (soundOn) pluck(now() + delay, SCALE[i % SCALE.length] + 12 * (i >= SCALE.length ? 1 : 0), v); },
+  };
+}
+function tone(f, d = .12, type = 'sine', vol = .15, f2 = null, delay = 0) {
+  if (!soundOn || !actx) return;
+  const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t + d + .02);
+}
+// a short airy whoosh: band-passed noise sweeping up, like air rushing past as you slip through a gap
+function whoosh(d = .32, vol = .22) {
+  if (!soundOn || !actx) return;
+  const t = actx.currentTime, len = Math.ceil(actx.sampleRate * d), b = actx.createBuffer(1, len, actx.sampleRate), c = b.getChannelData(0);
+  for (let i = 0; i < len; i++) c[i] = Math.random() * 2 - 1;
+  const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  src.buffer = b; f.type = 'bandpass'; f.Q.value = 1.4;
+  f.frequency.setValueAtTime(500, t); f.frequency.exponentialRampToValueAtTime(2600, t + d);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + d * .35); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  src.connect(f).connect(g).connect(actx.destination); src.start(t); src.stop(t + d + .02);
+}
+const sfx = {
+  // pickups play notes in the score's key: each crystal climbs one step of the pentatonic scale
+  crystal: () => { if (music) music.note(2 + crysN % 12); else tone(1046, .12, 'sine', .12); },
+  gem: () => { if (music) [3, 5, 7, 10].forEach((n, i) => music.note(n, .12, i * .09)); else tone(1318, .16, 'triangle', .1); },
+  // wall cleared: whoosh, then a rising fifth (D5 -> A5) in the score's key; a plain two-tone chime without music
+  pass: () => {
+    whoosh();
+    if (music) { music.note(5, .16, .05); music.note(8, .14, .14); }
+    else { tone(587, .14, 'triangle', .14, null, .05); tone(880, .2, 'triangle', .12, null, .14); }
+  },
+  hit: () => { tone(180, .35, 'sawtooth', .18, 50); tone(90, .4, 'square', .08, 40); },
+  tick: () => tone(660, .1, 'square', .06),
+  go: () => tone(880, .3, 'square', .08, 1320),
+};
+
+/* ================= Input: mouse / touch / keys stand in for the helmet ================= */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), hitPt = new THREE.Vector3();
+const keys = new Set();
+function screenToCorridor(cx, cy) {
+  ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  if (ray.ray.intersectPlane(plane, hitPt)) { pointer.tx = hitPt.x; pointer.ty = hitPt.y; }
+}
+addEventListener('pointermove', e => { if (mode === 'play') screenToCorridor(e.clientX, e.clientY); });
+canvas.addEventListener('pointerdown', e => {
+  if (mode !== 'play') return;
+  screenToCorridor(e.clientX, e.clientY);
+  ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(gems.filter(g => !g.taken && g.g.position.z > -26).map(g => g.hit));
+  if (hits.length) collectGem(hits[0].object.userData.gem);
+});
+addEventListener('keydown', e => {
+  const k = e.key;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'a', 'd', 'w', 's'].includes(k)) { keys.add(k); e.preventDefault(); }
+  if ((k === 'Enter' || k === ' ') && !e.repeat) {
+    if (!$('#intro').hidden) { e.preventDefault(); toBrief(); }
+    else if (!$('#onboard').hidden && $('#compare').hidden) { e.preventDefault(); startCountdown(); }
+    else if (!$('#over').hidden) { e.preventDefault(); startCountdown(); }
+  }
+  if (k === 'g' && mode === 'play') { const g = gems.find(x => !x.taken && x.g.position.z > -26); if (g) collectGem(g); } // keyboard stand-in for a wall touch
+});
+addEventListener('keyup', e => keys.delete(e.key));
+
+/* ================= Game state ================= */
+let mode = 'attract'; // attract | count | play | over
+const PLAY_SPEED = 9;
+let speed = PLAY_SPEED, distance = 0, runDist = 0, nextSpawn = 25, playTime = 0, bonus = 0;
+let wallsSeen = 0, lives = 3, invuln = 0, shake = 0, crysN = 0, gemsN = 0, dodged = 0, earlyHits = 0, firstClean = null, lastTypes = [];
+let gemTimer = 18, hintShown = false, briefStart = 0, briefSec = 0, autoT = 0;
+let best = 0; try { best = +localStorage.getItem('tc-best') || 0; } catch (e) {}
+
+function clearWorld() {
+  while (obstacles.length) removeObstacle(0);
+  crystals.splice(0).forEach(c => scene.remove(c.g));
+  gems.splice(0).forEach(g => scene.remove(g.g));
+}
+function pickType() {
+  let wave = WAVES[0];
+  for (const w of WAVES) if (mode !== 'play' || playTime >= w.at) wave = w;
+  if (mode !== 'play') wave = WAVES[2];
+  let t, guard = 0;
+  do { t = wave.types[(Math.random() * wave.types.length) | 0]; } while (guard++ < 10 && lastTypes.length >= 2 && lastTypes.every(x => x === t));
+  lastTypes.push(t); if (lastTypes.length > 2) lastTypes.shift();
+  return t;
+}
+function spawnWave() {
+  const o = spawnObstacle(pickType());
+  const [cx, cy] = openingCentre(o.open);
+  // crystal trail leading into the gap: teaches "follow the crystals" without words
+  if (Math.random() < .65) {
+    const n = 3;
+    for (let k = 0; k < n; k++) spawnCrystal(cx, cy, SPAWN_Z + 3 + k * 2.2);
+  } else if (Math.random() < .5) {
+    spawnCrystal(cx, cy, SPAWN_Z - 1.5);
+  }
+}
+
+function hud() {
+  $('#score').textContent = Math.floor(runDist + bonus).toLocaleString('en-GB');
+  $('#crysN').textContent = crysN;
+  [...$('#lives').children].forEach((el, i) => el.classList.toggle('lost', i >= lives));
+}
+function hit(o) {
+  lives--; invuln = 1.1; shake = reduceMotion ? .05 : .35; o.hit = true; o.flash = 1;
+  if (playTime < 30) earlyHits++;
+  sfx.hit();
+  const f = $('#flash'); f.style.transition = 'none'; f.style.opacity = 1; requestAnimationFrame(() => { f.style.transition = 'opacity .6s'; f.style.opacity = 0; });
+  pop('OUCH', new THREE.Vector3(pointer.x, pointer.y + .4, 0), '#ff6b5c');
+  hud();
+  if (lives <= 0) gameOver();
+}
+function collectGem(g) {
+  g.taken = true; gemsN++; bonus += 25; sfx.gem();
+  burst(g.g.position, 0xff8af0, 26, 4); pop('TOUCH +25', g.g.position, '#ff9cf2');
+  scene.remove(g.g); hideHint(); hud();
+}
+let hintTimer = 0;
+function showHint() { $('#hint').classList.add('show'); hintTimer = 2.6; }
+function hideHint() { $('#hint').classList.remove('show'); hintTimer = 0; }
+
+/* ================= Screen flow ================= */
+const show = (id, on) => { $(id).hidden = !on; };
+function toBrief() {
+  audio();
+  show('#intro', false); show('#over', false); show('#hud', false); show('#onboard', true);
+  briefStart = performance.now(); autoT = 0; mode = 'attract';
+}
+let countdownTimer = null;
+function startCountdown() {
+  if (mode === 'count') return;
+  audio();
+  if (!$('#onboard').hidden) briefSec = (performance.now() - briefStart) / 1000;
+  show('#onboard', false); show('#compare', false); show('#over', false); show('#intro', false);
+  clearWorld(); mode = 'count';
+  pointer.tx = 0; pointer.ty = REST_Y;
+  const el = $('#count'); el.hidden = false;
+  let n = 3; el.textContent = n; sfx.tick();
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    n--;
+    if (n > 0) { el.textContent = n; sfx.tick(); }
+    else { clearInterval(countdownTimer); el.hidden = true; startRun(); }
+  }, 700);
+}
+function startRun() {
+  mode = 'play'; sfx.go();
+  playTime = 0; runDist = 0; bonus = 0; lives = 3; invuln = 0; crysN = 0; gemsN = 0; dodged = 0; earlyHits = 0; firstClean = null; wallsSeen = 0;
+  gemTimer = 16; hintShown = false; lastTypes = [];
+  nextSpawn = distance + 2;
+  document.body.classList.add('playing'); // the wanderer is the cursor now
+  show('#hud', true); hud();
+}
+function gameOver() {
+  mode = 'over'; document.body.classList.remove('playing');
+  const final = Math.floor(runDist + bonus);
+  if (final > best) { best = final; try { localStorage.setItem('tc-best', best); } catch (e) {} }
+  setTimeout(() => {
+    $('#fScore').textContent = final.toLocaleString('en-GB');
+    $('#fCrys').textContent = crysN; $('#fGems').textContent = gemsN; $('#fDodge').textContent = dodged;
+    $('#fBest').textContent = best.toLocaleString('en-GB');
+    $('#fBrief').textContent = Math.round(briefSec) + 's';
+    $('#fEarly').textContent = earlyHits;
+    $('#fFirst').textContent = firstClean ? ordinal(firstClean) + ' wall' : 'none';
+    show('#hud', false); show('#over', true);
+  }, 700);
+}
+const ordinal = n => { const m = n % 100; if (m >= 11 && m <= 13) return n + 'th'; return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'); };
+
+$('#toBrief').addEventListener('click', toBrief);
+$('#go').addEventListener('click', startCountdown);
+$('#again').addEventListener('click', startCountdown);
+$('#rebrief').addEventListener('click', toBrief);
+$('#cmpBtn').addEventListener('click', () => { show('#compare', true); });
+$('#cmpClose').addEventListener('click', () => { show('#compare', false); autoT = 0; });
+$('#snd').addEventListener('click', e => { soundOn = !soundOn; e.currentTarget.textContent = soundOn ? 'Sound on' : 'Sound off'; e.currentTarget.setAttribute('aria-pressed', soundOn); audio(); if (music) music.setOn(soundOn); });
+
+/* ================= Brush-stroke button fills (painted once at load) ================= */
+// Dry-brush look from Wayfinder's buttons: rows of horizontal bristle strokes with ragged ends and small gaps,
+// thinner and broken at the top and bottom edges. Returned as images for the --brush-* CSS variables.
+function brushes() {
+  const paint = (w, h, color, shape) => {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+    g.fillStyle = color; g.strokeStyle = color; g.lineCap = 'round';
+    const rows = (x0, x1, y0, y1) => {
+      for (let y = y0; y < y1; y += 1.6) {
+        const edge = Math.min(y - y0, y1 - y) / ((y1 - y0) / 2); // 0 at the edges, 1 in the middle
+        let x = x0 + rnd(0, 14) * (1.2 - edge), end = x1 - rnd(0, 14) * (1.2 - edge);
+        g.lineWidth = rnd(1.6, 2.8); g.globalAlpha = rnd(.82, 1);
+        while (x < end) {
+          const seg = rnd(30, 160), nx = Math.min(end, x + seg);
+          g.beginPath(); g.moveTo(x, y + rnd(-.6, .6)); g.lineTo(nx, y + rnd(-.6, .6)); g.stroke();
+          x = nx + (Math.random() < .35 * (1.1 - edge) ? rnd(2, 10) : 0); // dry gaps, more near the edges
+        }
+      }
+      g.globalAlpha = .25; g.globalCompositeOperation = 'destination-out'; // a few pale streaks through the paint
+      for (let k = 0; k < 6; k++) { const y = rnd(y0 + 4, y1 - 4); g.lineWidth = rnd(.8, 1.6); g.beginPath(); g.moveTo(rnd(x0, x1 * .5), y); g.lineTo(rnd(x1 * .5, x1), y); g.stroke(); }
+      g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+    };
+    if (shape === 'L') { rows(w * .04, w * .97, h * .78, h * .96); // bottom stroke
+      g.save(); g.translate(w, 0); g.rotate(Math.PI / 2); rows(h * .1, h * .96, w * .03, w * .08); g.restore(); } // right stroke
+    else rows(w * .02, w * .98, h * .1, h * .9);
+    return `url(${c.toDataURL()})`;
+  };
+  const root = document.documentElement.style;
+  try {
+    root.setProperty('--brush-cream', paint(480, 200, '#f7ecd6'));
+    root.setProperty('--brush-cream-fb', 'transparent');
+    root.setProperty('--brush-shadow', paint(480, 200, '#2b1522', 'L'));
+    root.setProperty('--brush-ink', paint(400, 140, 'rgba(43,21,34,.86)'));
+    root.setProperty('--brush-ink-fb', 'transparent');
+  } catch (e) { /* the flat fallback colours stay */ }
+}
+brushes();
+
+/* ================= Main loop ================= */
+let last = performance.now(), clock = 0;
+function update(dt) {
+  clock += dt;
+  const playing = mode === 'play';
+  if (playing) { playTime += dt; speed = PLAY_SPEED; } // constant pace: players move physically in a shared room
+  else speed += ((mode === 'over' ? 4 : 9) - speed) * Math.min(1, dt * 2);
+  const dz = speed * dt;
+  distance += dz; if (playing) runDist += dz * .5;
+
+  floorMat.uniforms.uScroll.value = (floorMat.uniforms.uScroll.value + dz * TILES_Z / FLOOR_L) % 1;
+  floorMat.uniforms.uTime.value = clock;
+  starMat.uniforms.uTime.value = clock;
+  rippleTex.offset.y = (rippleTex.offset.y + dz * rippleTex.repeat.y / 520) % 1;
+  sunPathTex.offset.y = (sunPathTex.offset.y + dt * .015) % 1;
+
+  if (mode !== 'over' && mode !== 'count' && distance >= nextSpawn) {
+    spawnWave();
+    nextSpawn = distance + 24;
+  }
+
+  // obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i]; const prev = o.g.position.z; o.g.position.z += dz; const z = o.g.position.z;
+    if (!o.passed && prev < 0 && z >= 0) {
+      o.passed = true;
+      if (playing) wallsSeen++;
+      const [x0, x1, y0, y1] = o.open;
+      const inside = pointer.x - PR >= x0 - (x0 <= -HW ? 9 : 0) && pointer.x + PR <= x1 + (x1 >= HW ? 9 : 0)
+                  && pointer.y - PR >= y0 - (y0 <= 0 ? 9 : 0) && pointer.y + PR <= y1 + (y1 >= H ? 9 : 0);
+      if (playing) {
+        if (inside) { dodged++; bonus += 5; o.flash = .6; sfx.pass(); if (!firstClean) firstClean = wallsSeen; pop('+5', new THREE.Vector3(pointer.x, pointer.y + .45, 0), '#f0b54a'); }
+        else if (invuln <= 0) hit(o);
+      }
+    }
+    const fade = Math.min(THREE.MathUtils.clamp(1 - (z - .8) / 2.6, 0, 1), THREE.MathUtils.clamp((z - SPAWN_Z) / 10, 0, 1)); // rise out of the haze, fade as it passes
+    o.mat.opacity = fade;
+    if (o.flash > 0) {
+      o.flash -= dt;
+      if (o.hit) o.mat.emissive.setRGB(.9 * o.flash, .05, .02);
+    }
+    if (z > camZ + 1) removeObstacle(i);
+  }
+
+  // crystals
+  for (let i = crystals.length - 1; i >= 0; i--) {
+    const c = crystals[i]; const prev = c.g.position.z; c.g.position.z += dz; const z = c.g.position.z;
+    c.m.rotation.y += dt * 2.4; c.g.position.y = c.y + Math.sin(clock * 3 + c.spin) * .06;
+    if (!c.taken && prev < 0 && z >= 0) {
+      if (Math.hypot(pointer.x - c.x, pointer.y - c.y) < .62) {
+        c.taken = true; burst(c.g.position, 0x78f2ff, 14, 2.6);
+        if (playing) { crysN++; bonus += 10; sfx.crystal(); pop('+10', c.g.position, '#78f2ff'); hud(); }
+        scene.remove(c.g); crystals.splice(i, 1); continue;
+      }
+    }
+    if (z > camZ + 1) { scene.remove(c.g); crystals.splice(i, 1); }
+  }
+
+  // wall gems (touch the wall)
+  if (playing && playTime > 12) {
+    gemTimer -= dt;
+    if (gemTimer <= 0) { spawnGem(); gemTimer = rnd(9, 14); }
+  }
+  for (let i = gems.length - 1; i >= 0; i--) {
+    const g = gems[i]; g.g.position.z += dz; const z = g.g.position.z;
+    g.m.rotation.y += dt * 3; g.m.rotation.x += dt * 1.3;
+    const s = 1 + Math.sin(clock * 8) * .12; g.halo.scale.set(s, s, s);
+    if (!g.taken && playing && !hintShown && z > -24) { hintShown = true; showHint(); }
+    if (g.taken || z > camZ + .5) { scene.remove(g.g); gems.splice(i, 1); }
+  }
+  if (hintTimer > 0) { hintTimer -= dt; if (hintTimer <= 0) hideHint(); }
+
+  // pointer
+  if (playing || mode === 'count') {
+    let kx = 0, ky = 0;
+    if (keys.has('ArrowLeft') || keys.has('a')) kx--; if (keys.has('ArrowRight') || keys.has('d')) kx++;
+    if (keys.has('ArrowUp') || keys.has('w')) ky++; if (keys.has('ArrowDown') || keys.has('s')) ky--;
+    pointer.tx += kx * 7 * dt; pointer.ty += ky * 6 * dt;
+  } else {
+    // attract mode: autopilot glides through the next gap and picks up crystals
+    const next = obstacles.filter(o => !o.passed).sort((a, b) => b.g.position.z - a.g.position.z)[0];
+    if (next && next.g.position.z > -30) { const [cx, cy] = openingCentre(next.open); pointer.tx = cx; pointer.ty = cy; }
+    else { pointer.tx = Math.sin(clock * .7) * 1.2; pointer.ty = REST_Y + Math.sin(clock * 1.1) * .4; }
+  }
+  pointer.tx = THREE.MathUtils.clamp(pointer.tx, -HW + .3, HW - .3);
+  pointer.ty = THREE.MathUtils.clamp(pointer.ty, .3, H - .3);
+  const k = Math.min(1, dt * (mode === 'play' ? 14 : 4));
+  pointer.x += (pointer.tx - pointer.x) * k; pointer.y += (pointer.ty - pointer.y) * k;
+  P.position.set(pointer.x, pointer.y, 0);
+  if (dt > 0) {
+    const kv = Math.min(1, dt * 8);
+    pv.vx += (THREE.MathUtils.clamp((pointer.x - pv.x) / dt / 5, -1, 1) - pv.vx) * kv;
+    pv.vy += (THREE.MathUtils.clamp((pointer.y - pv.y) / dt / 5, -1, 1) - pv.vy) * kv;
+    pv.x = pointer.x; pv.y = pointer.y;
+  }
+  paintWanderer(clock);
+  halo.material.opacity = .18 + Math.sin(clock * 3) * .04;
+  if (invuln > 0) { invuln -= dt; P.visible = Math.floor(invuln * 14) % 2 === 0; } else P.visible = mode !== 'over';
+  helmetLight.position.set(pointer.x, pointer.y + .2, .6);
+  shadow.position.set(pointer.x, .02, 0);
+  const ss = .5 + pointer.y * .18; shadow.scale.set(ss, ss, 1); shadow.material.opacity = 1 - pointer.y * .15;
+
+  // camera: true one-point perspective, with a tiny lean and running bob
+  shake = Math.max(0, shake - dt * 1.2);
+  const bob = reduceMotion ? 0 : Math.sin(distance * .9) * .025 * (speed / 12);
+  camera.position.set(pointer.x * .08 + rnd(-1, 1) * shake, CAM_Y + bob + rnd(-1, 1) * shake, camZ);
+  camera.lookAt(pointer.x * .04, CAM_Y, -100);
+
+  // birds flap and drift
+  for (const b of birds) {
+    b.b.scale.y = b.s * Math.sin(clock * b.f + b.seed);
+    b.b.position.x += b.vx * dt; if (b.b.position.x > 80) b.b.position.x = -80;
+  }
+
+  // dust
+  const arr = dustGeo.attributes.position.array;
+  for (let i = 0; i < DUST; i++) {
+    arr[i * 3 + 2] += dz; arr[i * 3 + 1] += Math.sin(clock + i) * .002;
+    if (arr[i * 3 + 2] > camZ) { arr[i * 3 + 2] = SPAWN_Z + rnd(-5, 0); arr[i * 3] = rnd(-HW, HW); arr[i * 3 + 1] = rnd(0, H); }
+  }
+  dustGeo.attributes.position.needsUpdate = true;
+
+  // sparks
+  for (const p of sparks) {
+    if (p.life <= 0) continue;
+    p.life -= dt; p.v.y -= 4 * dt;
+    p.s.position.addScaledVector(p.v, dt); p.s.position.z += dz * .3;
+    const a = Math.max(0, p.life / p.max); p.s.material.opacity = a; p.s.scale.setScalar(p.size * (0.5 + a));
+    if (p.life <= 0) p.s.visible = false;
+  }
+
+  if (playing) hud();
+
+  // briefing screen: auto-start after two loops so a group that does nothing still gets going
+  if (!$('#onboard').hidden && $('#compare').hidden) {
+    autoT += dt;
+    const p = Math.min(1, autoT / (TUT_T * 2));
+    $('#go').style.setProperty('--p', p);
+    if (p >= 1) startCountdown();
+  }
+}
+
+/* ================= Page 2 animation: the "big GIF" ================= */
+const TUT_T = 6;
+const ease = x => { x = Math.max(0, Math.min(1, x)); return x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const DA = [.45, -.05], DB = [-.58, -.05], DC = [.42, .42];
+function dotAt(t) {
+  t = ((t % TUT_T) + TUT_T) % TUT_T;
+  if (t < .7) return DA;
+  if (t < 1.5) return lerp2(DA, DB, ease((t - .7) / .8));
+  if (t < 3.2) return DB;
+  if (t < 4.0) return lerp2(DB, DC, ease((t - 3.2) / .8));
+  if (t < 5.3) return DC;
+  return lerp2(DC, DA, ease((t - 5.3) / .7));
+}
+function tutPhase(t) {
+  t = t % TUT_T;
+  if ((t >= .7 && t < 1.5) || (t >= 3.2 && t < 4.0)) return 'move';
+  if (t >= 1.5 && t < 2.9) return 'dodge';
+  if (t >= 4.0 && t < 5.3) return 'grab';
+  return '';
+}
+function drawTut(ctx, w, h, time) {
+  const t = time % TUT_T;
+  const cx = w / 2, cy = h / 2, fw = w * .47, fh = h * .46, K = 7;
+  const sc = d => 1 / (1 + d * K);
+  const Pt = (nx, ny, d) => { const s = sc(d); return [cx + nx * fw * s, cy - ny * fh * s]; };
+  const quad = (pts, fill) => { ctx.beginPath(); ctx.moveTo(...pts[0]); for (let i = 1; i < pts.length; i++) ctx.lineTo(...pts[i]); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+  ctx.clearRect(0, 0, w, h);
+  // sunset sky, sun, distant ridge, water, then the causeway (same palette as the 3D run)
+  const [bx, by] = Pt(0, 0, 1);
+  const sk = ctx.createLinearGradient(0, 0, 0, by); sk.addColorStop(0, '#58294a'); sk.addColorStop(.45, '#c4524e'); sk.addColorStop(.85, '#f39e66'); sk.addColorStop(1, '#f7c793');
+  ctx.fillStyle = sk; ctx.fillRect(0, 0, w, by);
+  const sr = h * .13, sy = by - sr * .55;
+  const gl = ctx.createRadialGradient(bx, sy, sr * .8, bx, sy, sr * 3.5); gl.addColorStop(0, 'rgba(255,160,100,.55)'); gl.addColorStop(1, 'rgba(255,160,100,0)');
+  ctx.fillStyle = gl; ctx.fillRect(0, 0, w, by);
+  const sg = ctx.createLinearGradient(0, sy - sr, 0, sy + sr); sg.addColorStop(0, '#ffa85c'); sg.addColorStop(1, '#ff6838');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(bx, sy, sr, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7d6b78'; ctx.beginPath(); ctx.moveTo(0, by);
+  for (let x = 0; x <= w; x += w / 40) ctx.lineTo(x, by - h * (.03 + .025 * Math.sin(x / w * 9 + 1) + .015 * Math.sin(x / w * 23)) * Math.min(1, Math.abs(x - bx) / (w * .15) + .2));
+  ctx.lineTo(w, by); ctx.fill();
+  const wa = ctx.createLinearGradient(0, by, 0, h); wa.addColorStop(0, '#f1b88c'); wa.addColorStop(.3, '#7a8076'); wa.addColorStop(1, '#24474a');
+  ctx.fillStyle = wa; ctx.fillRect(0, by, w, h - by);
+  ctx.fillStyle = 'rgba(255,140,80,.55)';
+  for (let k = 0; k < 14; k++) { const yy = by + 4 + k * k * h * .0022, ww = sr * (.5 + k * .09) * (.6 + .4 * Math.sin(k * 3.7 + time * 2)); ctx.fillRect(bx - ww, yy, ww * 2, Math.max(1, h * .004)); }
+  // glass floor: soft white and mostly transparent, no reflections (matches the 3D run)
+  const fl = ctx.createLinearGradient(0, h, 0, by); fl.addColorStop(0, 'rgba(240,243,245,.14)'); fl.addColorStop(1, 'rgba(240,243,245,.4)');
+  quad([Pt(-1, -1, 0), Pt(1, -1, 0), Pt(1, -1, 1), Pt(-1, -1, 1)], fl);
+  // causeway edges
+  ctx.strokeStyle = 'rgba(255,138,60,.7)'; ctx.lineWidth = Math.max(2, w / 300);
+  for (const x of [-1, 1]) { ctx.beginPath(); ctx.moveTo(...Pt(x, -1, 0)); ctx.lineTo(...Pt(x, -1, 1)); ctx.stroke(); }
+
+  const DD = .06;
+  // the wall with a gap
+  const od = t < 2.4 ? 1 - (t / 2.4) * (1 - DD) : DD - (t - 2.4) * .2;
+  const oAlpha = t < 2.4 ? Math.min(1, t / .3) : Math.max(0, 1 - (t - 2.4) / .35);
+  const drawWall = () => {
+    if (oAlpha <= 0 || od < -.05) return;
+    ctx.save(); ctx.globalAlpha = oAlpha;
+    const a = Pt(-.12, 1, Math.max(0, od)), b = Pt(1, -1, Math.max(0, od));
+    const grd = ctx.createLinearGradient(a[0], a[1], a[0], b[1]); grd.addColorStop(0, '#f0d6b4'); grd.addColorStop(1, '#d58a62');
+    ctx.fillStyle = grd; ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = Math.max(1, (b[0] - a[0]) / 40);
+    for (let k = 1; k < 4; k++) { const y = a[1] + (b[1] - a[1]) * k / 4; ctx.beginPath(); ctx.moveTo(a[0], y); ctx.lineTo(b[0], y); ctx.stroke(); }
+    ctx.fillStyle = '#ffd27a'; ctx.shadowColor = '#ffa526'; ctx.shadowBlur = 20;
+    ctx.fillRect(a[0] - (b[0] - a[0]) * .03, a[1], (b[0] - a[0]) * .03, b[1] - a[1]);
+    ctx.restore();
+  };
+  // crystal
+  const cd = t >= 2.8 && t < 4.6 ? 1 - ((t - 2.8) / 1.8) * (1 - DD) : -1;
+  const drawCrystal = () => {
+    if (cd < 0) return;
+    const [x, y] = Pt(DC[0], DC[1], cd); const r = h * .07 * sc(cd) / sc(DD);
+    ctx.save();
+    const cg = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2); cg.addColorStop(0, 'rgba(120,242,255,.7)'); cg.addColorStop(1, 'rgba(120,242,255,0)');
+    ctx.fillStyle = cg; ctx.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+    const sp = Math.cos(time * 4);
+    ctx.beginPath(); ctx.moveTo(x, y - r * 1.4); ctx.lineTo(x + r * .8 * sp, y); ctx.lineTo(x, y + r * 1.4); ctx.lineTo(x - r * .8 * sp, y); ctx.closePath();
+    ctx.fillStyle = '#9ff7ff'; ctx.fill(); ctx.strokeStyle = '#e8fdff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  };
+  // the wanderer = your head (same character as in the run)
+  const drawDot = () => {
+    const r = h * .045;
+    for (let g = 5; g >= 1; g--) { // a trail of cream brush specks
+      const [gx, gy] = dotAt(time - g * .06); const [x, y] = Pt(gx, gy, DD);
+      ctx.fillStyle = `rgba(255,246,220,${.1 * (6 - g)})`; ctx.beginPath(); ctx.arc(x, y + r * .4, r * .22 * (1 - g * .1), 0, 7); ctx.fill();
+    }
+    const [nx, ny] = dotAt(time); const [x, y] = Pt(nx, ny, DD);
+    const [px, py] = dotAt(time - .05);
+    const hg = ctx.createRadialGradient(x, y, 0, x, y, r * 3); hg.addColorStop(0, 'rgba(255,207,112,.2)'); hg.addColorStop(1, 'rgba(255,207,112,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(x, y, r * 3, 0, 7); ctx.fill();
+    drawWanderer(ctx, x, y, r * 1.9, { t: time, vx: (nx - px) / .05 / 1.2, vy: (ny - py) / .05 / 1.2 });
+    // floor shadow sells the 3D position
+    const [sx, sy] = Pt(nx, -1, DD);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(sx, sy - r * .3, r * 1.4, r * .35, 0, 0, 7); ctx.fill();
+    // safe pass ring
+    if (t > 2.35 && t < 2.95) {
+      const p = (t - 2.35) / .6;
+      ctx.strokeStyle = `rgba(240,181,74,${1 - p})`; ctx.lineWidth = r * .3; ctx.beginPath(); ctx.arc(x, y, r * (1.6 + p * 4), 0, 7); ctx.stroke();
+    }
+    // crystal sparkle
+    if (t > 4.55 && t < 5.2) {
+      const p = (t - 4.55) / .65;
+      for (let i = 0; i < 12; i++) {
+        const a = i / 12 * Math.PI * 2, d = r * (1.5 + p * 5);
+        ctx.fillStyle = `rgba(160,248,255,${1 - p})`; ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, r * .22 * (1 - p * .5), 0, 7); ctx.fill();
+      }
+    }
+  };
+  // draw order follows depth
+  if (od > DD) drawWall();
+  if (cd > DD) drawCrystal();
+  drawDot();
+  if (od <= DD) drawWall();
+}
+
+function sizeCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+  const w = Math.max(2, Math.round(r.width * dpr)), h = Math.max(2, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return [w, h];
+}
+const tutC = $('#tut'), tutX = tutC.getContext('2d');
+const cmpC = $('#tutCmp'), cmpX = cmpC.getContext('2d');
+const smallC = $('#tutSmall'), smallX = smallC.getContext('2d');
+let tutTime = 0, lastPhase = null;
+function drawBriefing(dt) {
+  if (!$('#onboard').hidden) {
+    tutTime += dt;
+    const [w, h] = sizeCanvas(tutC); drawTut(tutX, w, h, tutTime);
+    const ph = tutPhase(tutTime);
+    if (ph !== lastPhase) { lastPhase = ph; document.querySelectorAll('.kw').forEach(el => el.classList.toggle('on', el.dataset.k === ph)); }
+  }
+  if (!$('#compare').hidden) {
+    tutTime += 0; // shares the clock with the main loop
+    const [w, h] = sizeCanvas(cmpC); drawTut(cmpX, w, h, tutTime);
+    drawTut(smallX, smallC.width, smallC.height, tutTime);
+  }
+}
+
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt); drawBriefing(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
